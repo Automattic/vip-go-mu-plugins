@@ -73,6 +73,38 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->assertSame( 'admin', $result->user_login );
 	}
 
+	public function data_restricted_account_login_cookie(): array {
+		return [
+			'set at login'     => [ 'set' ],
+			'used from before' => [ 'used' ],
+		];
+	}
+
+	/**
+	 * The machine account's login cookies are refused when they're set and when they're used, and its sessions end.
+	 *
+	 * @dataProvider data_restricted_account_login_cookie
+	 */
+	public function test__restricted_account_login_cookie_refused( string $when ) {
+		$this->set_up_restricted_account( WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL );
+		$user_id = username_exists( WPCOM_VIP_MACHINE_USER_LOGIN );
+		$manager = WP_Session_Tokens::get_instance( $user_id );
+		$cookie  = wp_generate_auth_cookie( $user_id, time() + HOUR_IN_SECONDS, 'auth', $manager->create( time() + HOUR_IN_SECONDS ) );
+		// The WP test suite blocks auth cookies for every test.
+		remove_filter( 'send_auth_cookies', '__return_false' );
+
+		try {
+			if ( 'set' === $when ) {
+				wp_set_auth_cookie( $user_id );
+			} else {
+				wp_validate_auth_cookie( $cookie, 'auth' );
+			}
+			$this->fail( 'The login cookie was accepted.' );
+		} catch ( WPDieException $e ) {
+			$this->assertSame( [], $manager->get_all() );
+		}
+	}
+
 	/**
 	 * Create alice, whose login is mallory's email, so core checks both accounts' passwords for that username.
 	 */

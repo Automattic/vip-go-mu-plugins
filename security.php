@@ -435,13 +435,26 @@ function wpcom_vip_login_limiter_on_success( $username ) {
 }
 add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success' );
 
+/**
+ * Whether an account is refused logins, whichever username or email it logs in with.
+ *
+ * @internal
+ *
+ * @param WP_User $user The account.
+ * @return bool
+ */
+function _vip_is_restricted_account( WP_User $user ) {
+	// Accounts named admin can still log in by email, unless admin is the machine account's login.
+	if ( 'admin' === _vip_login_limit_username( $user->user_login ) ) {
+		return 'admin' === strtolower( WPCOM_VIP_MACHINE_USER_LOGIN );
+	}
+
+	return wpcom_vip_is_restricted_username( $user->user_login );
+}
+
 function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username ) {
 	// Also check the account that was logged in, which another handler may have found by a different username.
-	// Except accounts named admin: that name is restricted because it's guessed, and they can still log in by email.
-	// The machine account stays refused even when its login is configured as admin.
-	$is_restricted_account = $user instanceof WP_User && ! empty( $username )
-		&& wpcom_vip_is_restricted_username( $user->user_login )
-		&& ( 'admin' !== _vip_login_limit_username( $user->user_login ) || 'admin' === strtolower( WPCOM_VIP_MACHINE_USER_LOGIN ) );
+	$is_restricted_account = $user instanceof WP_User && ! empty( $username ) && _vip_is_restricted_account( $user );
 	if ( wpcom_vip_is_restricted_username( $username ) || $is_restricted_account ) {
 		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
 	}
@@ -449,6 +462,36 @@ function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username ) {
 	return $user;
 }
 add_filter( 'authenticate', 'wpcom_vip_limit_logins_for_restricted_usernames', 30, 2 ); // core authenticates on 20
+
+/**
+ * Ends a restricted account's sessions and stops the request.
+ *
+ * @internal
+ *
+ * @param WP_User $user The account.
+ */
+function _vip_end_restricted_account_sessions( WP_User $user ) {
+	WP_Session_Tokens::get_instance( $user->ID )->destroy_all();
+	wp_die( 'Logins are restricted for that user. Please try a different user account.', '', [ 'response' => 403 ] );
+}
+
+// Logins that don't go through `authenticate`, such as single sign-on, still set login cookies.
+// The parameters after `$send` are optional because core passes them from WordPress 6.2.
+add_filter( 'send_auth_cookies', function ( $send, $expire = 0, $expiration = 0, $user_id = 0 ) {
+	$user = $send && $user_id ? get_userdata( $user_id ) : false;
+	if ( $user && _vip_is_restricted_account( $user ) ) {
+		_vip_end_restricted_account_sessions( $user );
+	}
+
+	return $send;
+}, PHP_INT_MAX, 4 );
+
+// Refuse login cookies that were set some other way, or before the account was restricted, when they're used.
+add_action( 'auth_cookie_valid', function ( $cookie_elements, $user ) {
+	if ( _vip_is_restricted_account( $user ) ) {
+		_vip_end_restricted_account_sessions( $user );
+	}
+}, 10, 2 );
 
 function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 	if ( empty( $username ) && empty( $password ) ) {
